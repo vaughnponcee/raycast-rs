@@ -1,0 +1,16 @@
+[package]
+name = "raycast-rs"
+version = "0.1.0"
+edition = "2021"
+description = "Wolfenstein-style software raycaster from scratch: DDA, textured walls, floor/ceiling casting, sprites, dynamic lighting. No dependencies."
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
