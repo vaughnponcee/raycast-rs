@@ -104,6 +104,19 @@ impl Map {
         m
     }
 
+    /// How many of the 8 cells around (x, y) are open floor.
+    pub fn open_around(&self, x: usize, y: usize) -> usize {
+        let mut n = 0;
+        for dy in -1i32..=1 {
+            for dx in -1i32..=1 {
+                if (dx, dy) != (0, 0) && self.get(x as i32 + dx, y as i32 + dy) == 0 {
+                    n += 1;
+                }
+            }
+        }
+        n
+    }
+
     fn add_lamp(&mut self, x: f32, y: f32) {
         self.sprites.push(Sprite { x, y, kind: SpriteKind::Lamp });
         self.lights.push(Light { x, y, color: [1.0, 0.72, 0.42], radius: 3.2, flicker: 0.12 });
@@ -187,13 +200,15 @@ impl Map {
                 }
                 let r = rng.below(1000);
                 let (cx, cy) = (x as f32 + 0.5, y as f32 + 0.5);
+                // barrels and pillars block movement, so they only go in open rooms:
+                // a prop in a one-tile corridor would seal it off
+                let open = m.open_around(x, y);
                 if r < 22 {
-                    m.add_lamp(cx, cy);
+                    m.add_lamp(cx, cy); // lamps don't block: fine anywhere
                     lamps += 1;
-                } else if r < 55 {
-                    m.sprites.push(Sprite { x: cx, y: cy, kind: SpriteKind::Barrel });
-                } else if r < 70 {
-                    m.sprites.push(Sprite { x: cx, y: cy, kind: SpriteKind::Pillar });
+                } else if r < 70 && open >= 8 {
+                    let kind = if r < 55 { SpriteKind::Barrel } else { SpriteKind::Pillar };
+                    m.sprites.push(Sprite { x: cx, y: cy, kind });
                 }
             }
         }

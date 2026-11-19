@@ -254,3 +254,48 @@ fn c_abi_roundtrip() {
     raycast_rs::rc_frame(1.0 / 60.0, 0, 0.0);
     assert_eq!(raycast_rs::rc_stat(3), 80.0);
 }
+
+#[test]
+fn props_never_block_the_maze() {
+    // walk the maze with the player's real collision test: every open cell must
+    // be reachable from the start (a barrel in a corridor used to seal it off)
+    let mut placed = 0;
+    for seed in 1..=40u32 {
+        let m = Map::maze(12, 10, seed);
+        placed += m.sprites.len();
+        let g = Game::new(m, 64, 36);
+        let m = &g.map;
+        let free = |x: usize, y: usize, nx: usize, ny: usize| {
+            (0..=10).all(|k| {
+                let t = k as f32 / 10.0;
+                let px = x as f32 + 0.5 + (nx as f32 - x as f32) * t;
+                let py = y as f32 + 0.5 + (ny as f32 - y as f32) * t;
+                !g.blocked(px, py, PLAYER_RADIUS)
+            })
+        };
+        let start = (m.start.0 as usize, m.start.1 as usize);
+        let mut seen = vec![false; m.w * m.h];
+        let mut q = std::collections::VecDeque::from([start]);
+        seen[start.1 * m.w + start.0] = true;
+        while let Some((x, y)) = q.pop_front() {
+            for (nx, ny) in [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)] {
+                if m.get(nx as i32, ny as i32) == 0 && !seen[ny * m.w + nx] && free(x, y, nx, ny) {
+                    seen[ny * m.w + nx] = true;
+                    q.push_back((nx, ny));
+                }
+            }
+        }
+        for y in 0..m.h {
+            for x in 0..m.w {
+                if m.get(x as i32, y as i32) != 0 { continue; }
+                // a cell holding a solid prop can't be stood in; everything else must be reachable
+                let prop = m.sprites.iter().any(|s| {
+                    matches!(s.kind, raycast_rs::map::SpriteKind::Barrel | raycast_rs::map::SpriteKind::Pillar)
+                        && s.x as usize == x && s.y as usize == y
+                });
+                assert!(prop || seen[y * m.w + x], "seed {seed}: cell ({x},{y}) cut off");
+            }
+        }
+    }
+    assert!(placed > 200, "decoration still happens ({placed} props)");
+}

@@ -14,7 +14,8 @@ pub const TURN_L: u32 = 16;
 pub const TURN_R: u32 = 32;
 pub const RUN: u32 = 64;
 
-pub const PLAYER_RADIUS: f32 = 0.22;
+/// Half-width of the player's collision box: small enough to walk right up to walls.
+pub const PLAYER_RADIUS: f32 = 0.15;
 const FOV_PLANE: f32 = 0.66; // tan(fov/2): ~66 degree horizontal FOV
 const AMBIENT: [f32; 3] = [0.07, 0.07, 0.09];
 const FOG: [f32; 3] = [8.0, 9.0, 12.0];
