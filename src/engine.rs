@@ -93,9 +93,15 @@ impl Game {
             return true;
         }
         // solid props (pillars, barrels) block too
+        // radii match what you see: the pillar shaft is about 0.4 of a cell wide
+        // (the caps are wider but sit at floor and ceiling height)
         m.sprites.iter().any(|s| {
-            matches!(s.kind, SpriteKind::Pillar | SpriteKind::Barrel)
-                && (s.x - x).powi(2) + (s.y - y).powi(2) < (r + 0.28).powi(2)
+            let solid = match s.kind {
+                SpriteKind::Pillar => 0.17,
+                SpriteKind::Barrel => 0.24,
+                _ => return false,
+            };
+            (s.x - x).powi(2) + (s.y - y).powi(2) < (r + solid).powi(2)
         })
     }
 
